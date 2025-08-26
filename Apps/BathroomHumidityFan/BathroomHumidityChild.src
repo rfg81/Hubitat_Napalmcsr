@@ -395,25 +395,19 @@ def disabledHandler(evt) {
             disabledSwitchState = it.currentValue("switch")
         }
         if (disabledSwitchState == "on") {
-            state.disabled = false
-            if (state?.paused == true) {
-                state.status = "(Paused)"
-                state.pausedOrDisabled = true
-            } else {
-                state.paused = false
-                state.disabled = false
-                state.pausedOrDisabled = false
-                if (fanSwitch.currentValue("switch") == "off") {
-                    state.status = "(Off)"
-                    ifDebug("disabledHandler: App was enabled or unpaused and fan was off.")
-                }
-            }
-        } else if (disabledSwitchState == "off") {
             state.pauseButtonName = "Disabled by Switch"
             state.status = "(Disabled)"
             state.disabled = true
-            updateLabel()
-            ifDebug("disabledHandler: App was disabled and fan is ${fanSwitch.currentValue("switch")}.")
+            unsubscribe()
+            unschedule()
+            ifDebug("disabledHandler: App disabled by switch.")
+        } else if (disabledSwitchState == "off") {
+            state.disabled = false
+            state.paused = false
+            state.pausedOrDisabled = false
+            state.status = "(Off)"
+            initialize()
+            ifDebug("disabledHandler: App re-enabled by switch.")
         }
     }
     updateLabel()
@@ -999,16 +993,22 @@ def appButtonHandler(btn) {
         setCreateSmartSwitchButtonName()
     } else if (btn == "On") {
         fanSwitch.on()
+        state.disabled = false
+        state.pausedOrDisabled = false
         ifDebug("On command sent")
-	runIn(5, updateLabel)
+        runIn(5, updateLabel)
     } else if (btn == "Off") {
         fanSwitch.off()
+        state.disabled = false
+        state.pausedOrDisabled = false
         ifDebug("Off command sent")
         runIn(5, updateLabel)
     } else if (btn == "Disabled by Switch") {
         state.disabled = false
-        unschedule()
-        unsubscribe()
+        state.paused = false
+        state.pausedOrDisabled = false
+        initialize()
+        updateLabel()
     } else if (btn == "Resume") {
         state.disabled = false
         state.paused = !state.paused
